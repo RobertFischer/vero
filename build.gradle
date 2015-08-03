@@ -1,0 +1,75 @@
+plugins {
+  id "com.jfrog.bintray" version "1.2"
+}
+
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'eclipse'
+apply plugin: 'groovy'
+apply plugin: 'maven'
+
+
+group = 'com.smokejumperit'
+assert veroVersion: "Please provide a version for Restling (this project)"
+version = veroVersion
+
+sourceCompatibility = 8
+targetCompatibility = 8
+
+repositories {
+  mavenLocal()
+  mavenCentral()
+  jcenter()
+}
+dependencies {
+  testCompile "org.codehaus.groovy:groovy-all:[2.4.4,2.5)"
+  testCompile 'junit:junit:[4.12,5)'
+  testCompile "org.spockframework:spock-core:1.0-groovy-2.4"
+}
+
+
+
+task sourceJar(type: Jar) {
+    from sourceSets.main.allSource
+    classifier = 'sources'
+}
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+configurations { published }
+artifacts {
+  published sourceJar
+  published javadocJar
+}
+
+bintray { // See https://github.com/bintray/gradle-bintray-plugin
+  user = System.env.BINTRAY_USER
+  key = System.env.BINTRAY_API_KEY
+
+  publish = true
+
+  configurations = ['published', 'archives']
+
+  pkg {
+    repo = "maven"
+    name = "vero"
+    version {
+      name = veroVersion
+    }
+    desc = "A semantic-ish Version object for Java"
+    def githubUrl = "https://github.com/RobertFischer/vero"
+    websiteUrl = githubUrl
+    issueTrackerUrl = "$githubUrl/issues"
+    vcsUrl = "${githubUrl}.git"
+    licenses = ["Unlicense"]
+    labels = ["java", "version", "semantic-versioning", "versioning"]
+    publicDownloadNumbers = true
+  }
+
+}
+
+tasks.bintrayUpload.dependsOn(
+  tasks.install, tasks.javadocJar, tasks.sourceJar
+)
